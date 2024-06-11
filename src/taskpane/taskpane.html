@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Strata Choice</title>
+
+    <!-- Office JavaScript API -->
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
+
+    <!-- Fluent UI -->
+    <link rel="stylesheet" href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-core/11.0.0/css/fabric.min.css"/>
+
+    <!-- Template styles -->
+    <link href="taskpane.css" rel="stylesheet" type="text/css" />
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f3f2f1;
+            margin: 0;
+            padding: 0;
+        }
+        .form-container {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            margin: 20px;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-width: 800px; /* Increase the max-width */
+            width: 100%;
+        }
+        .form-container label {
+            margin-bottom: 10px; /* Increase the margin-bottom */
+            font-weight: 600;
+        }
+        .form-container select {
+            width: 100%;
+            margin-bottom: 20px; /* Increase the margin-bottom */
+            padding: 10px; /* Increase the padding */
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+        }
+        .ms-welcome__action {
+            margin-top: 20px;
+            padding: 15px 30px; /* Increase the padding */
+            background-color: #0078d4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            text-align: center;
+        }
+        .ms-welcome__action:hover {
+            background-color: #005a9e;
+        }
+        .ms-Button-label {
+            color: white; /* Ensure the text color is white */
+        }
+        #item-response {
+            margin-top: 20px;
+            padding: 15px; /* Increase the padding */
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            min-height: 150px; /* Increase the min-height */
+            width: 100%;
+            max-width: 800px; /* Increase the max-width */
+            background-color: #ffffff;
+            white-space: pre-wrap; /* Ensures that whitespace and line breaks are preserved */
+        }
+        #copy-response, #send-email {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #0078d4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #copy-response:hover, #send-email:hover {
+            background-color: #005a9e;
+        }
+        #message {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #e0f7e0;
+            color: #107c10;
+        }
+        #run {
+            background-color: #0f0f0f; /* Change this to the desired color */
+        }
+        #run:hover {
+            background-color: #005a9e; /* Change this to the desired hover color */
+        }
+    </style>
+</head>
+
+<body class="ms-font-m ms-welcome ms-Fabric">
+    <header class="ms-welcome__header ms-bgColor-neutralLighter" style="padding: 20px; text-align: center;">
+        <img width="590" height="190" src="../../assets/slogo2.png" alt="Contoso" title="Contoso" />
+    </header>
+    <section id="sideload-msg" class="ms-welcome__main">
+        <!-- Sideload message content -->
+    </section>
+    <main id="app-body" class="ms-welcome__main" style="display: none; padding: 20px;">
+
+        <form class="form-container">
+            <label for="select-language" class="ms-Label">Select Language</label>
+            <select id="select-language" class="ms-Dropdown">
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <!-- Add more languages as needed -->
+            </select>
+
+            <label for="select-style" class="ms-Label">Style</label>
+            <select id="select-style" class="ms-Dropdown">
+                <option value="long">Long Response</option>
+                <option value="short">Short Response</option>
+
+
+                
+                <!-- Add more styles as needed -->
+            </select>
+        </form>
+
+        <div role="button" id="run" class="ms-welcome__action ms-Button ms-Button--hero ms-font-xl">
+            <span class="ms-Button-label">Create Response</span>
+        </div>
+        <p><label id="item-response" contenteditable="true" style="text-align: left; display: none;"></label></p>
+        <button id="copy-response" style="display: none;">Copy Response</button>
+        <button id="send-email" style="display: none;">Send Email</button>
+        <div id="message" style="display:none; color: green;"></div>
+    </main>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const itemResponse = document.getElementById("item-response");
+            const copyButton = document.getElementById("copy-response");
+            const messageDiv = document.getElementById("message");
+
+            const observer = new MutationObserver(() => {
+                if (itemResponse.innerHTML.trim() !== "") {
+                    copyButton.style.display = "block";
+                } else {
+                    copyButton.style.display = "none";
+                }
+            });
+
+            observer.observe(itemResponse, { childList: true, subtree: true });
+
+            copyButton.addEventListener("click", function() {
+                const range = document.createRange();
+                range.selectNodeContents(itemResponse);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+
+                try {
+                    document.execCommand("copy");
+                    selection.removeAllRanges();
+                    showMessage("Response copied to clipboard!");
+                } catch (err) {
+                    showMessage("Failed to copy response.");
+                }
+            });
+
+            function showMessage(message) {
+                messageDiv.textContent = message;
+                messageDiv.style.display = "block";
+                setTimeout(() => {
+                    messageDiv.style.display = "none";
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+
+</html>
