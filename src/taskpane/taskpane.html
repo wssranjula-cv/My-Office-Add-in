@@ -48,7 +48,7 @@
         .ms-welcome__action {
             margin-top: 20px;
             padding: 15px 30px; /* Increase the padding */
-            background-color: #0078d4;
+            background-color: #010b13;
             color: white;
             border: none;
             border-radius: 4px;
@@ -100,6 +100,13 @@
         #run:hover {
             background-color: #e2e8ec; /* Change this to the desired hover color */
         }
+        #spinner img {
+        width: 50px; /* Adjust the width as needed */
+        height: 50px; /* Adjust the height as needed */
+    }
+    #run .ms-Button-label {
+        color: black; /* Set the text color to black */
+    }
     </style>
 </head>
 
@@ -139,6 +146,11 @@
         <div role="button" id="run" class="ms-welcome__action ms-Button ms-Button--hero ms-font-xl">
             <span class="ms-Button-label">Create Response</span>
         </div>
+
+        <div id="spinner" style="display: none; text-align: center;">
+            <img src="../../assets/spinner.gif" alt="Loading..." />
+        </div>
+
         <p><label id="item-response" contenteditable="true" style="text-align: left; display: none;"></label></p>
         <button id="copy-response" style="display: none;">Copy Response</button>
         <button id="send-email" style="display: none;">Send Email</button>

@@ -17,33 +17,44 @@ Office.onReady((info) => {
 });
 
 export async function run() {
+  const createResponseButton = document.getElementById("run");
+  const spinner = document.getElementById("spinner");
+
+  // Show the spinner and disable the button
+  spinner.style.display = "block";
+  createResponseButton.disabled = true;
+  createResponseButton.style.cursor = "not-allowed";
+  createResponseButton.style.opacity = "0.5";
+
   // Get the selected values from the dropdowns
   const languageSelect = document.getElementById("select-language");
   const styleSelect = document.getElementById("select-style");
   let selectedLanguage = languageSelect.value;
   let selectedStyle = styleSelect.value;
 
-    // Update the values based on their initial values
+  // Update the values based on their initial values
   if (selectedLanguage === "en") {
     selectedLanguage = "Australian English";
   } else if (selectedLanguage === "es") {
     selectedLanguage = "Spanish";
   } else if (selectedLanguage === "fr") {
     selectedLanguage = "French";
-  }else if (selectedLanguage === "ch") {
+  } else if (selectedLanguage === "ch") {
     selectedLanguage = "Chineese";
-  }else if (selectedLanguage === "mn") {
+  } else if (selectedLanguage === "mn") {
     selectedLanguage = "Mandarin";
-  }else if (selectedLanguage === "gr") {
-    selectedLanguage = "Greek";}
-  else if (selectedLanguage === "ar") {
-      selectedLanguage = "Arabic";}
+  } else if (selectedLanguage === "gr") {
+    selectedLanguage = "Greek";
+  } else if (selectedLanguage === "ar") {
+    selectedLanguage = "Arabic";
+  }
 
   if (selectedStyle === "long") {
     selectedStyle = "well detailed long response";
   } else if (selectedStyle === "short") {
     selectedStyle = "short response with key information";
-  } 
+  }
+
   // Log the selected values to the console
   console.log(`Selected Language: ${selectedLanguage}`);
   console.log(`Selected Style: ${selectedStyle}`);
@@ -54,11 +65,11 @@ export async function run() {
   let senderName = item.from.displayName;
   console.log(`Sender: ${senderName} <${senderEmail}>`);
   let reciver = senderName;
- 
+
   let toRecipients = item.to.map(recipient => `${recipient.displayName} <${recipient.emailAddress}>`).join(", ");
   let sender = toRecipients;
   console.log(`To: ${toRecipients}`);
-  
+
   item.body.getAsync(Office.CoercionType.Text, async function (result) {
     if (result.status === Office.AsyncResultStatus.Succeeded) {
       let emailbody = result.value;
@@ -84,27 +95,34 @@ export async function run() {
           style: selectedStyle,
         });
 
-        // var emailtext = emailresponse.action_item;
-        // console.log(emailresponse);
         emailresponse = emailresponse.replace(/\*\*(.*?)\*\*/g, "$1");
-                // Remove triple backticks from the start and end if present
-                // Remove triple backticks and language identifier from the start and end if present
-        console.log(emailresponse);
         const tripleBacktickPattern = /^```[a-z]*\n([\s\S]*?)\n```$/;
         const match = emailresponse.match(tripleBacktickPattern);
         if (match) {
           emailresponse = match[1];
         }
-      console.log(emailresponse);
+        console.log(emailresponse);
+
         // Ensure proper HTML formatting
         document.getElementById("item-response").innerHTML = "<br/>" + emailresponse.replace(/\n/g, "<br>");
         document.getElementById("item-response").style.display = "block";
         document.getElementById("send-email").style.display = "block";
       } catch (error) {
         console.error(error.message);
+      } finally {
+        // Hide the spinner and re-enable the button
+        spinner.style.display = "none";
+        createResponseButton.disabled = false;
+        createResponseButton.style.cursor = "pointer";
+        createResponseButton.style.opacity = "1";
       }
     } else {
       console.error(result.error.message);
+      // Hide the spinner and re-enable the button in case of error
+      spinner.style.display = "none";
+      createResponseButton.disabled = false;
+      createResponseButton.style.cursor = "pointer";
+      createResponseButton.style.opacity = "1";
     }
   });
 }
