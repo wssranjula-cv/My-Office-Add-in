@@ -30,7 +30,14 @@ export async function run() {
     selectedLanguage = "Spanish";
   } else if (selectedLanguage === "fr") {
     selectedLanguage = "French";
-  }
+  }else if (selectedLanguage === "ch") {
+    selectedLanguage = "Chineese";
+  }else if (selectedLanguage === "mn") {
+    selectedLanguage = "Mandarin";
+  }else if (selectedLanguage === "gr") {
+    selectedLanguage = "Greek";}
+  else if (selectedLanguage === "ar") {
+      selectedLanguage = "Arabic";}
 
   if (selectedStyle === "long") {
     selectedStyle = "well detailed long response";
@@ -77,9 +84,18 @@ export async function run() {
           style: selectedStyle,
         });
 
-        var emailtext = emailresponse.action_item;
-        console.log(emailresponse);
+        // var emailtext = emailresponse.action_item;
+        // console.log(emailresponse);
         emailresponse = emailresponse.replace(/\*\*(.*?)\*\*/g, "$1");
+                // Remove triple backticks from the start and end if present
+                // Remove triple backticks and language identifier from the start and end if present
+        console.log(emailresponse);
+        const tripleBacktickPattern = /^```[a-z]*\n([\s\S]*?)\n```$/;
+        const match = emailresponse.match(tripleBacktickPattern);
+        if (match) {
+          emailresponse = match[1];
+        }
+      console.log(emailresponse);
         // Ensure proper HTML formatting
         document.getElementById("item-response").innerHTML = "<br/>" + emailresponse.replace(/\n/g, "<br>");
         document.getElementById("item-response").style.display = "block";
