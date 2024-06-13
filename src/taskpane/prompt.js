@@ -68,7 +68,6 @@ You will find the link to change your preference in the email sent to you with t
 """
 
 email body :{body} email subject : {subject}
- reciver : {reciver}
  YOu Must Write the Response in {language} Language. 
  
  and it must have {style} 

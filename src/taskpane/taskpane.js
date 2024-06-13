@@ -1,24 +1,33 @@
-
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { AzureChatOpenAI } from "@langchain/azure-openai";
-import { StringOutputParser, JsonOutputFunctionsParser } from "@langchain/core/output_parsers";
+import { StringOutputParser } from "@langchain/core/output_parsers";
 import { promptt } from './prompt';
-// import { JsonOutputFunctionsParser } from "langchain/output_parsers";
 
 Office.onReady((info) => {
   if (info.host === Office.HostType.Outlook) {
-    document.getElementById("sideload-msg").style.display = "none";
-    document.getElementById("app-body").style.display = "flex";
-    document.getElementById("run").onclick = run;
-    document.getElementById("copy-response").onclick = copyResponse;
-    document.getElementById("send-email").onclick = sendEmail;
-    document.getElementById("item-response").style.display = "none";
+    const sideloadMsg = document.getElementById("sideload-msg");
+    const appBody = document.getElementById("app-body");
+    const runButton = document.getElementById("run");
+    const copyResponseButton = document.getElementById("copy-response");
+    const sendEmailButton = document.getElementById("send-email");
+    const itemResponse = document.getElementById("item-response");
+
+    sideloadMsg.style.display = "none";
+    appBody.style.display = "flex";
+    runButton.onclick = run;
+    copyResponseButton.onclick = copyResponse;
+    sendEmailButton.onclick = sendEmail;
+    itemResponse.style.display = "none";
   }
 });
 
 export async function run() {
   const createResponseButton = document.getElementById("run");
   const spinner = document.getElementById("spinner");
+  const languageSelect = document.getElementById("select-language");
+  const styleSelect = document.getElementById("select-style");
+  const itemResponse = document.getElementById("item-response");
+  const sendEmailButton = document.getElementById("send-email");
 
   // Show the spinner and disable the button
   spinner.style.display = "block";
@@ -27,52 +36,26 @@ export async function run() {
   createResponseButton.style.opacity = "0.5";
 
   // Get the selected values from the dropdowns
-  const languageSelect = document.getElementById("select-language");
-  const styleSelect = document.getElementById("select-style");
-  let selectedLanguage = languageSelect.value;
-  let selectedStyle = styleSelect.value;
-
-  // Update the values based on their initial values
-  if (selectedLanguage === "en") {
-    selectedLanguage = "Australian English";
-  } else if (selectedLanguage === "es") {
-    selectedLanguage = "Spanish";
-  } else if (selectedLanguage === "fr") {
-    selectedLanguage = "French";
-  } else if (selectedLanguage === "ch") {
-    selectedLanguage = "Chineese";
-  } else if (selectedLanguage === "mn") {
-    selectedLanguage = "Mandarin";
-  } else if (selectedLanguage === "gr") {
-    selectedLanguage = "Greek";
-  } else if (selectedLanguage === "ar") {
-    selectedLanguage = "Arabic";
-  }
-
-  if (selectedStyle === "long") {
-    selectedStyle = "well detailed long response";
-  } else if (selectedStyle === "short") {
-    selectedStyle = "short response with key information";
-  }
+  const selectedLanguage = getSelectedLanguage(languageSelect.value);
+  const selectedStyle = getSelectedStyle(styleSelect.value);
 
   // Log the selected values to the console
   console.log(`Selected Language: ${selectedLanguage}`);
   console.log(`Selected Style: ${selectedStyle}`);
 
   const item = Office.context.mailbox.item;
-  let emailsubject = item.subject;
-  let senderEmail = item.from.emailAddress;
-  let senderName = item.from.displayName;
+  const emailsubject = item.subject;
+  const senderEmail = item.from.emailAddress;
+  const senderName = item.from.displayName;
   console.log(`Sender: ${senderName} <${senderEmail}>`);
-  let reciver = senderName;
 
-  let toRecipients = item.to.map(recipient => `${recipient.displayName} <${recipient.emailAddress}>`).join(", ");
-  let sender = toRecipients;
-  console.log(`To: ${toRecipients}`);
+  const toRecipients = item.to.map(recipient => `${recipient.displayName} <${recipient.emailAddress}>`).join(", ");
+  const firstName = toRecipients.split(' ')[0];
+  console.log(firstName);
 
   item.body.getAsync(Office.CoercionType.Text, async function (result) {
     if (result.status === Office.AsyncResultStatus.Succeeded) {
-      let emailbody = result.value;
+      const emailbody = result.value;
 
       const prompt = ChatPromptTemplate.fromTemplate(promptt);
       const parser = new StringOutputParser();
@@ -86,27 +69,21 @@ export async function run() {
       const chain = prompt.pipe(model).pipe(parser);
 
       try {
-        var emailresponse = await chain.invoke({
+        let emailresponse = await chain.invoke({
           body: emailbody,
           subject: emailsubject,
-          sender: sender,
-          reciver: reciver,
+          sender: firstName,
           language: selectedLanguage,
           style: selectedStyle,
         });
 
-        emailresponse = emailresponse.replace(/\*\*(.*?)\*\*/g, "$1");
-        const tripleBacktickPattern = /^```[a-z]*\n([\s\S]*?)\n```$/;
-        const match = emailresponse.match(tripleBacktickPattern);
-        if (match) {
-          emailresponse = match[1];
-        }
+        emailresponse = formatEmailResponse(emailresponse);
         console.log(emailresponse);
 
         // Ensure proper HTML formatting
-        document.getElementById("item-response").innerHTML = "<br/>" + emailresponse.replace(/\n/g, "<br>");
-        document.getElementById("item-response").style.display = "block";
-        document.getElementById("send-email").style.display = "block";
+        itemResponse.innerHTML = "<br/>" + emailresponse.replace(/\n/g, "<br>");
+        itemResponse.style.display = "block";
+        sendEmailButton.style.display = "block";
       } catch (error) {
         console.error(error.message);
       } finally {
@@ -125,6 +102,38 @@ export async function run() {
       createResponseButton.style.opacity = "1";
     }
   });
+}
+
+function getSelectedLanguage(language) {
+  const languageMap = {
+    "en": "Australian English",
+    "es": "Spanish",
+    "fr": "French",
+    "ch": "Chinese",
+    "mn": "Mandarin",
+    "gr": "Greek",
+    "ar": "Arabic"
+  };
+  return languageMap[language] || language;
+}
+
+function getSelectedStyle(style) {
+  const styleMap = {
+    "long": "well clear ,detailed  very very long response ",
+    "meduim": "well detailed medium response",
+    "short": "short response with key information"
+  };
+  return styleMap[style] || style;
+}
+
+function formatEmailResponse(response) {
+  response = response.replace(/\*\*(.*?)\*\*/g, "$1");
+  const tripleBacktickPattern = /^```[a-z]*\n([\s\S]*?)\n```$/;
+  const match = response.match(tripleBacktickPattern);
+  if (match) {
+    response = match[1];
+  }
+  return response;
 }
 
 function copyResponse() {
